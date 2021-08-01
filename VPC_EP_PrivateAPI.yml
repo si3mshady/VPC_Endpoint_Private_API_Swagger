@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  deploy-vpc-endpoint-and-api
+  
+Resources:
+  Si3mshadyVPCE:
+    Type: AWS::EC2::VPCEndpoint
+    Properties: 
+      
+      VpcEndpointType: Interface
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action:
+              - '*'
+            Resource:
+                - '*'
+      SubnetIds:
+        - subnet-0609232d3b35be74f
+      
+      ServiceName: com.amazonaws.us-east-1.execute-api
+      VpcId: vpc-0d7c7782922d89291
+
+  Si3mshadyMockAPI:
+    Type: AWS::ApiGateway::RestApi
+    Properties:            
+      EndpointConfiguration:
+        Types:
+          - PRIVATE
+            
+        VpcEndpointIds:
+          - Ref: Si3mshadyVPCE
+
+      BodyS3Location: 
+        Bucket: si3mshady-mock-api
+        Key:  mock.yml
+
+  Si3mshadyApiStage:
+    Type: AWS::ApiGateway::Stage
+    Properties:           
+      DeploymentId: !Ref Si3mshadyDeployment
+      RestApiId: !Ref Si3mshadyMockAPI
+      # StageName: si3mshady
+     
+  Si3mshadyDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Properties:       
+      RestApiId: !Ref Si3mshadyMockAPI   
+      StageName: si3mshady
+
+
+#Deployment practice - Deploy VPC endpoint and private rest api w/ invocation 
+
+#invoke api 
+#curl -v  https://vpce-06dd0b08f09790e00-yzt77tg5.execute-api.us-east-1.vpce.amazonaws.com/si3mshady/saturday -H'x-apigw-api-id:9nezaomcgc'
+#curl -v https://{public-dns-hostname}.execute-api.{region}.vpce.amazonaws.com/test -H'x-apigw-api-id:{api-id}'
+# https://docs.aws.amazon.com/apigateway/latest/developerguide/apigateway-private-api-test-invoke-url.html
+
